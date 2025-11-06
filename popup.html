@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Event</title>
+    <style>
+        body { font-family: sans-serif; width: 300px; padding: 10px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 95%; padding: 5px; }
+        button { width: 100%; padding: 10px; margin-top: 15px; background-color: #4285F4; color: white; border: none; cursor: pointer; }
+        #status { margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h3>Add Event to Calendar</h3>
+    <form id="event-form">
+        <label for="event-title">Title:</label>
+        <input type="text" id="event-title" required>
+        
+        <label for="event-datetime">Date & Time:</label>
+        <input type="datetime-local" id="event-datetime" required>
+        
+        <button type="submit">Add to Google Calendar</button>
+    </form>
+    <div id="status"></div>
+    <script src="popup.js"></script>
+
+</body>
+</html>
