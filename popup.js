@@ -1,9 +1,19 @@
+// Function to handle messages from the background script
+function handleBackgroundMessages(request, sender, sendResponse) {
+    const statusDiv = document.getElementById('status');
+    if (request.type === 'EVENT_ADDED') {
+        statusDiv.innerHTML = `Success! <a href="${request.link}" target="_blank">View Event</a>`;
+    } else if (request.type === 'API_ERROR') {
+        statusDiv.textContent = `Error: ${request.message}`;
+    }
+}
+
+// Add the listener when the popup loads
+chrome.runtime.onMessage.addListener(handleBackgroundMessages);
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Query the active tab to send a message to the content script
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
-        
-        // Check if the tab is valid to avoid errors on chrome:// pages
         if (activeTab.id) {
             chrome.scripting.executeScript({
                 target: { tabId: activeTab.id },
@@ -11,24 +21,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }).then(() => {
                 chrome.tabs.sendMessage(activeTab.id, { type: 'GET_PAGE_DETAILS' }, (response) => {
                     if (chrome.runtime.lastError) {
-                        // Handle the case where the content script is not available
                         console.error(chrome.runtime.lastError.message);
-                        document.getElementById('event-title').value = 'Could not get page title';
                         return;
                     }
                     if (response && response.title) {
-                        console.log("Popup received details:", response);
                         document.getElementById('event-title').value = response.title;
+                        // Set a default date/time for now
+                        const now = new Date();
+                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                        document.getElementById('event-datetime').value = now.toISOString().slice(0,16);
                     }
                 });
             });
         }
     });
 
-    // Form submission logic
     document.getElementById('event-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        // Placeholder for API call
-        document.getElementById('status').textContent = 'Connecting to Google...';
+        const title = document.getElementById('event-title').value;
+        const dateTime = document.getElementById('event-datetime').value;
+
+        if (title && dateTime) {
+            document.getElementById('status').textContent = 'Adding event...';
+            // Send event details to background script
+            chrome.runtime.sendMessage({
+                type: 'ADD_EVENT',
+                details: {
+                    title: title,
+                    dateTime: new Date(dateTime).toISOString()
+                }
+            });
+        }
     });
 });

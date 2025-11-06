@@ -5,8 +5,22 @@
   "description": "A simple extension to add events to Google Calendar from any webpage.",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting", 
+    "identity", 
+    "storage"
   ],
+  "host_permissions": [
+    "https://www.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "oauth2": {
+    "client_id": "680386344591-pc6trmdd109vevcs66g1v718oavct23s.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.events"
+    ]
+  },
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
