@@ -14,22 +14,37 @@ chrome.runtime.onMessage.addListener(handleBackgroundMessages);
 document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
+        
         if (activeTab.id) {
+            // We still inject the script to make sure it's running
             chrome.scripting.executeScript({
                 target: { tabId: activeTab.id },
                 files: ['content.js']
             }).then(() => {
+                // Then we send the message to get the details
                 chrome.tabs.sendMessage(activeTab.id, { type: 'GET_PAGE_DETAILS' }, (response) => {
                     if (chrome.runtime.lastError) {
-                        console.error(chrome.runtime.lastError.message);
+                        console.error("Error getting page details:", chrome.runtime.lastError.message);
                         return;
                     }
-                    if (response && response.title) {
-                        document.getElementById('event-title').value = response.title;
-                        // Set a default date/time for now
-                        const now = new Date();
-                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                        document.getElementById('event-datetime').value = now.toISOString().slice(0,16);
+
+                    if (response) {
+                        console.log("Popup received details:", response);
+                        document.getElementById('event-title').value = response.title || '';
+
+                        // The datetime-local input requires a specific format: "YYYY-MM-DDTHH:mm"
+                        let inputDateTime = '';
+                        if (response.datetime) {
+                            try {
+                                const date = new Date(response.datetime);
+                                // Adjust for timezone offset to display correctly in the user's local time
+                                date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+                                inputDateTime = date.toISOString().slice(0, 16);
+                            } catch (e) {
+                                console.error("Could not parse date:", e);
+                            }
+                        }
+                        document.getElementById('event-datetime').value = inputDateTime;
                     }
                 });
             });
