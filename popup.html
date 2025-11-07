@@ -12,6 +12,20 @@
         .time-container div { width: 48%; }
         button { width: 100%; padding: 10px; margin-top: 15px; background-color: #4285F4; color: white; border: none; cursor: pointer; border-radius: 3px; font-size: 1em; }
         #status { margin-top: 10px; text-align: center; }
+        #drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            color: #777;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #drop-zone.dragover {
+            background-color: #f0f8ff;
+            border-color: #4285F4;
+        }
     </style>
 </head>
 <body>
@@ -40,6 +54,13 @@
         <button type="submit">Add to Google Calendar</button>
     </form>
     <div id="status"></div>
+
+    <div id="drop-zone">
+        Or drop .ics file here
+    </div>
+    <input type="file" id="ics-file-input" accept=".ics,text/calendar" style="display: none;">
+
+    <script src="lib/ical.min.js"></script> <!-- Load the library FIRST -->
     <script src="popup.js"></script>
 </body>
 </html>

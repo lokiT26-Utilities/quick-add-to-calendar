@@ -12,6 +12,58 @@ function formatDateTimeForInput(date) {
     }
 }
 
+// This function takes the text content of an ICS file and populates the form
+function parseIcsContent(icsContent) {
+    try {
+        const jcalData = ICAL.parse(icsContent);
+        const vcalendar = new ICAL.Component(jcalData);
+        const vevent = vcalendar.getFirstSubcomponent('vevent');
+        
+        if (vevent) {
+            const event = new ICAL.Event(vevent);
+
+            console.log("Parsed ICS Event:", event);
+
+            // Populate the form with the parsed data
+            document.getElementById('event-title').value = event.summary || '';
+            document.getElementById('event-location').value = event.location || '';
+            document.getElementById('event-description').value = event.description || '';
+            
+            // ICAL.js gives us an ICAL.Time object. We convert it to a JS Date.
+            document.getElementById('event-start-datetime').value = formatDateTimeForInput(event.startDate.toJSDate());
+            document.getElementById('event-end-datetime').value = formatDateTimeForInput(event.endDate.toJSDate());
+
+            document.getElementById('status').textContent = 'ICS file parsed successfully!';
+        } else {
+            throw new Error("No VEVENT found in the ICS file.");
+        }
+    } catch (error) {
+        console.error("Error parsing ICS file:", error);
+        document.getElementById('status').textContent = 'Error: Could not parse ICS file.';
+    }
+}
+
+// This function handles the file selection (from drop or click)
+function handleFileSelect(file) {
+    if (file && file.type === 'text/calendar') {
+        const reader = new FileReader();
+        // Set up the reader to call our parser when the file is loaded
+        reader.onload = (e) => {
+            let icsContent = e.target.result;
+
+            // --- THIS IS THE FIX ---
+            // Normalize all line endings to the standard CRLF (\r\n) before parsing.
+            icsContent = icsContent.replace(/(\r\n|\n|\r)/g, "\r\n");
+            
+            parseIcsContent(icsContent);
+        };
+        // Read the file as plain text
+        reader.readAsText(file);
+    } else {
+        document.getElementById('status').textContent = 'Please select a valid .ics file.';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
@@ -48,6 +100,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+        }
+    });
+
+    // EVENT LISTENERS FOR THE DROP ZONE
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('ics-file-input');
+
+    // Clicking the drop zone opens the file dialog
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // File dialog selection
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    // Drag and Drop listeners
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Necessary to allow dropping
+        e.stopPropagation();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length) {
+            handleFileSelect(e.dataTransfer.files[0]);
         }
     });
 
