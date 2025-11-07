@@ -8,18 +8,22 @@ function addEventToCalendar(eventDetails) {
             return;
         }
 
-        console.log("Got auth token:", token);
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+        // Build the event object with all the new details
         const event = {
             'summary': eventDetails.title,
+            'location': eventDetails.location,
+            'description': eventDetails.description,
             'start': {
-                'dateTime': eventDetails.dateTime,
-                'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+                'dateTime': eventDetails.startDateTime,
+                'timeZone': timeZone,
             },
             'end': {
-                'dateTime': eventDetails.dateTime, // For simplicity, end time is same as start
-                'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+                'dateTime': eventDetails.endDateTime,
+                'timeZone': timeZone,
             },
+            // More fields like attendees or reminders can be added here later
         };
 
         fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {

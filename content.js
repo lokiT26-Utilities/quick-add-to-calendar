@@ -38,12 +38,27 @@ function getPageDetails() {
         try {
             const data = JSON.parse(script.textContent);
             // Look for an object with "@type" set to "Event"
-            if (data && data['@type'] && (data['@type'].includes('Event') || data['@type'].includes('event'))) {
+            if (data && data['@type'] && (data['@type'].includes('Event') || Array.isArray(data['@type']) && data['@type'].some(type => type.includes('Event')))) {
                 console.log("Found Event in JSON-LD:", data);
+
+                let locationString = '';
+                if (data.location) {
+                    if (typeof data.location === 'string') {
+                        locationString = data.location;
+                    } else if (data.location.name) {
+                        locationString = data.location.name;
+                        if (data.location.address) {
+                            locationString += `, ${data.location.address}`;
+                        }
+                    }
+                }
+
                 return {
                     title: data.name,
-                    // startDate can be an object or just a string
-                    datetime: data.startDate?.['@value'] || data.startDate, 
+                    startDatetime: data.startDate,
+                    endDatetime: data.endDate,
+                    description: data.description,
+                    location: locationString,
                     foundBy: "JSON-LD"
                 };
             }
@@ -62,13 +77,18 @@ function getPageDetails() {
     const h1 = document.querySelector('h1');
     const heuristicTitle = h1 ? h1.innerText : pageTitle;
 
-    // Use our function to find a date in the body text
-    const heuristicDateTime = findDateTimeOnPage();
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    const heuristicDescription = ogDescription ? ogDescription.content : '';
+
+    const heuristicStartDateTime = findDateTimeOnPage();
 
     console.log("Falling back to Heuristics.");
     return {
         title: heuristicTitle,
-        datetime: heuristicDateTime,
+        startDatetime: heuristicStartDateTime,
+        description: heuristicDescription,
+        endDatetime: null, 
+        location: '',
         foundBy: "Heuristics"
     };
 }
